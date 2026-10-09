@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Teamwork Questionnaire</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #F5F7FA;
+    --surface: #FFFFFF;
+    --ink: #1C2740;
+    --muted: #566079;
+    --rule: #DCE1EA;
+    --accent: #1C2740;
+    --accent-ink: #FFFFFF;
+    --warn: #B3261E;
+    --warn-bg: #FCEDEC;
+    --leader: #2F5DA8;
+    --doer: #B8336A;
+    --thinker: #2E7D6B;
+    --carer: #A86F0A;
+    --low-zone: rgba(28, 39, 64, 0.06);
+    --font: "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #141B2B;
+      --surface: #1B2337;
+      --ink: #E7EBF3;
+      --muted: #A3ADC2;
+      --rule: #2E3850;
+      --accent: #9DB8F0;
+      --accent-ink: #10182A;
+      --warn: #FF8A80;
+      --warn-bg: #3A1F24;
+      --leader: #7FA5E8;
+      --doer: #E27BA6;
+      --thinker: #6CC3AC;
+      --carer: #E3B24F;
+      --low-zone: rgba(231, 235, 243, 0.06);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #141B2B; --surface: #1B2337; --ink: #E7EBF3; --muted: #A3ADC2; --rule: #2E3850;
+    --accent: #9DB8F0; --accent-ink: #10182A; --warn: #FF8A80; --warn-bg: #3A1F24;
+    --leader: #7FA5E8; --doer: #E27BA6; --thinker: #6CC3AC; --carer: #E3B24F;
+    --low-zone: rgba(231, 235, 243, 0.06);
+  }
+  *, *::before, *::after { box-sizing: inherit; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 1.0625rem;
+    line-height: 1.55;
+  }
+  .wrap { max-width: 50rem; margin: 0 auto; padding: 0 1.25rem; }
+
+  /* Header */
+  .masthead { padding: 3rem 0 1.5rem; }
+  .masthead h1 {
+    font-size: clamp(2.1rem, 6vw, 3.25rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin: 0 0 0.75rem;
+  }
+  .role-strip { display: flex; gap: 0.35rem; margin-bottom: 1.25rem; }
+  .role-strip span { height: 0.4rem; flex: 1; border-radius: 2px; }
+  .lede { font-size: 1.2rem; color: var(--muted); margin: 0; max-width: 38rem; }
+
+  .instructions {
+    border-left: 3px solid var(--accent);
+    padding: 0.25rem 0 0.25rem 1rem;
+    margin: 1.5rem 0 2rem;
+    max-width: 40rem;
+  }
+  .instructions p { margin: 0 0 0.5rem; }
+  .instructions p:last-child { margin-bottom: 0; }
+
+  .name-field { margin-bottom: 2rem; }
+  .name-field label { display: block; font-weight: 700; margin-bottom: 0.35rem; }
+  .name-field .hint { color: var(--muted); font-weight: 400; font-size: 0.95rem; }
+  .name-field input {
+    font: inherit; color: inherit; background: var(--surface);
+    border: 1px solid var(--rule); border-radius: 6px;
+    padding: 0.55rem 0.75rem; width: 100%; max-width: 22rem;
+  }
+
+  /* Items */
+  .items { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
+  .item {
+    display: grid;
+    grid-template-columns: 2.25rem 1fr auto;
+    gap: 0.5rem 1rem;
+    align-items: center;
+    padding: 1rem 0.5rem;
+    border-bottom: 1px solid var(--rule);
+    scroll-margin-top: 1rem;
+  }
+  .num { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 0.95rem; text-align: right; align-self: start; padding-top: 0.1rem; }
+  .stmt { margin: 0; }
+  .missing-note { display: none; grid-column: 2 / -1; color: var(--warn); font-size: 0.9rem; margin: 0; }
+  .item.missing { background: var(--warn-bg); box-shadow: inset 3px 0 0 var(--warn); }
+  .item.missing .missing-note { display: block; }
+
+  .scale { display: flex; border: 0; margin: 0; padding: 0; gap: 0; }
+  .scale label { position: relative; cursor: pointer; }
+  .scale input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .scale span {
+    display: block;
+    padding: 0.45rem 0.8rem;
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    font-size: 0.95rem;
+    min-width: 6.25rem;
+    text-align: center;
+    user-select: none;
+  }
+  .scale label + label span { border-left: 0; }
+  .scale label:first-child span { border-radius: 6px 0 0 6px; }
+  .scale label:last-child span { border-radius: 0 6px 6px 0; }
+  .scale label:hover span { border-color: var(--muted); }
+  .scale input:checked + span { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+  .scale input:focus-visible + span { outline: 3px solid var(--leader); outline-offset: 2px; position: relative; z-index: 1; }
+
+  @media (max-width: 660px) {
+    .item { grid-template-columns: 1.75rem 1fr; }
+    .scale { grid-column: 2; }
+    .scale label { flex: 1; }
+    .scale span { min-width: 0; padding: 0.55rem 0.4rem; }
+  }
+
+  /* Sticky submit bar */
+  .submitbar {
+    position: sticky;
+    bottom: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--rule);
+    margin-top: 2rem;
+    padding: 0.85rem 0 calc(0.85rem + env(safe-area-inset-bottom, 0px));
+    z-index: 5;
+  }
+  .submitbar .wrap { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+  .progress { flex: 1; min-width: 12rem; }
+  .progress-text { font-size: 0.95rem; margin-bottom: 0.3rem; }
+  .progress-text.alert { color: var(--warn); font-weight: 700; }
+  .meter { height: 6px; background: var(--rule); border-radius: 3px; overflow: hidden; }
+  .meter div { height: 100%; width: 0; background: var(--accent); transition: width 0.2s ease; }
+
+  button {
+    font: inherit; font-weight: 700; cursor: pointer;
+    border-radius: 6px; padding: 0.65rem 1.2rem;
+    border: 1px solid var(--accent);
+  }
+  button.primary { background: var(--accent); color: var(--accent-ink); }
+  button.secondary { background: transparent; color: var(--ink); border-color: var(--rule); }
+  button.secondary:hover { border-color: var(--muted); }
+  button:focus-visible { outline: 3px solid var(--leader); outline-offset: 2px; }
+
+  /* Results */
+  .results { padding: 3rem 0 4rem; }
+  .results[hidden] { display: none; }
+  .results h2 { font-size: clamp(1.75rem, 4.5vw, 2.4rem); line-height: 1.1; letter-spacing: -0.015em; margin: 0 0 0.25rem; }
+  .results .who { color: var(--muted); margin: 0 0 1.5rem; }
+  .summary { font-size: 1.15rem; max-width: 40rem; }
+  .summary p { margin: 0 0 0.75rem; }
+  .summary strong { font-weight: 700; }
+
+  .bars { margin: 2rem 0 0.5rem; display: grid; gap: 1.1rem; }
+  .bar-row { display: grid; grid-template-columns: 6rem 1fr 4.5rem; align-items: center; gap: 1rem; }
+  .bar-name { font-weight: 700; }
+  .bar-track {
+    position: relative; height: 2.25rem; border-radius: 4px;
+    background: linear-gradient(to right, var(--low-zone) 0 45%, transparent 45% 100%), var(--surface);
+    border: 1px solid var(--rule);
+    overflow: hidden;
+  }
+  .bar-fill {
+    position: absolute; inset: 0 auto 0 0; width: 0;
+    transition: width 0.7s cubic-bezier(.2,.7,.2,1);
+  }
+  .bar-tag {
+    position: absolute; left: 0.6rem; top: 50%; transform: translateY(-50%);
+    font-size: 0.85rem; font-weight: 700; color: #fff;
+    white-space: nowrap;
+  }
+  .bar-score { font-variant-numeric: tabular-nums; font-size: 1.15rem; font-weight: 700; }
+  .bar-score small { color: var(--muted); font-weight: 400; font-size: 0.85rem; }
+  @media (prefers-reduced-motion: reduce) { .bar-fill { transition: none; } }
+  .scale-key { display: grid; grid-template-columns: 6rem 1fr 4.5rem; gap: 1rem; color: var(--muted); font-size: 0.85rem; }
+  .scale-key div { position: relative; height: 1.2rem; }
+  .scale-key div span { position: absolute; transform: translateX(-50%); }
+  .scale-key div span:first-child { transform: none; }
+  .scale-key div span:last-child { transform: translateX(-100%); }
+  @media (max-width: 520px) {
+    .bar-row, .scale-key { grid-template-columns: 4.75rem 1fr 3.5rem; gap: 0.6rem; }
+    .bar-tag { display: none; }
+  }
+
+  .role-defs { margin: 2.5rem 0 0; padding: 0; list-style: none; display: grid; gap: 0.9rem; max-width: 42rem; }
+  .role-defs li { padding-left: 1rem; border-left: 4px solid var(--c); }
+  .role-defs strong { display: block; }
+  .role-defs p { margin: 0; color: var(--muted); }
+
+  details { margin-top: 2.5rem; border-top: 1px solid var(--rule); padding-top: 1rem; }
+  summary { cursor: pointer; font-weight: 700; }
+  .table-scroll { overflow-x: auto; margin-top: 1rem; }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; font-size: 0.95rem; }
+  th, td { text-align: left; padding: 0.5rem 0.75rem 0.5rem 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-weight: 700; }
+  td.items-col { color: var(--muted); }
+  .method { color: var(--muted); font-size: 0.95rem; margin-top: 0.75rem; }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 2.5rem; }
+  .copied { color: var(--thinker); font-weight: 700; align-self: center; }
+
+  footer { color: var(--muted); font-size: 0.85rem; padding: 0 0 2rem; }
+
+  /* Print: results only */
+  @media print {
+    body { background: #fff; color: #000; }
+    body.scored .instructions, body.scored .name-field, body.scored #quiz,
+    body.scored .lede, .actions, footer { display: none !important; }
+    .results { padding-top: 1rem; }
+    .bar-fill, .role-strip span { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    details { display: block; }
+    details > *:not(summary) { display: block; }
+  }
+</style>
+</head>
+<body>
+
+<header class="wrap masthead">
+  <div class="role-strip" aria-hidden="true">
+    <span style="background:var(--leader)"></span>
+    <span style="background:var(--doer)"></span>
+    <span style="background:var(--thinker)"></span>
+    <span style="background:var(--carer)"></span>
+  </div>
+  <h1>Teamwork Questionnaire</h1>
+  <p class="lede">Find out which role suits you best when working in a group: Leader, Doer, Thinker, or Carer.</p>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="instructions">
+      <p>Imagine yourself as a member of a small group or team of about six people.</p>
+      <p>Read each of the 40 statements and decide, as honestly as you can, whether you <strong>often</strong>, <strong>sometimes</strong>, or <strong>rarely</strong> behave in the way described. There are no right or wrong answers.</p>
+    </div>
+
+    <div class="name-field">
+      <label for="respondent">Your name <span class="hint">(optional, shown on printed results)</span></label>
+      <input id="respondent" type="text" autocomplete="name">
+    </div>
+  </div>
+
+  <form id="quiz" novalidate>
+    <div class="wrap">
+      <ol class="items" id="items"></ol>
+    </div>
+    <div class="submitbar">
+      <div class="wrap">
+        <div class="progress">
+          <div class="progress-text" id="progressText" aria-live="polite">0 of 40 answered</div>
+          <div class="meter" aria-hidden="true"><div id="meterFill"></div></div>
+        </div>
+        <button type="submit" class="primary">Score my answers</button>
+      </div>
+    </div>
+  </form>
+
+  <section class="wrap results" id="results" hidden tabindex="-1" aria-labelledby="resultsHeading">
+    <h2 id="resultsHeading">Your teamwork profile</h2>
+    <p class="who" id="who"></p>
+    <div class="summary" id="summary"></div>
+
+    <div class="bars" id="bars"></div>
+    <div class="scale-key" aria-hidden="true">
+      <i></i>
+      <div><span style="left:0">0</span><span style="left:45%">9</span><span style="left:75%">15</span><span style="left:100%">20</span></div>
+      <i></i>
+    </div>
+
+    <ul class="role-defs" id="roleDefs"></ul>
+
+    <details>
+      <summary>How your scores were calculated</summary>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Often</th><th>Sometimes</th><th>Score</th><th>Items</th></tr>
+          </thead>
+          <tbody id="breakdown"></tbody>
+        </table>
+      </div>
+      <p class="method">Each “often” answer counts 2 points, each “sometimes” counts 1, and each “rarely” counts 0. Each role has 10 items, so the maximum score is 20. Scores of 9 or below (the shaded part of each bar) suggest you are less comfortable in that role.</p>
+    </details>
+
+    <div class="actions">
+      <button type="button" class="primary" id="printBtn">Print results</button>
+      <button type="button" class="secondary" id="copyBtn">Copy results</button>
+      <button type="button" class="secondary" id="resetBtn">Start over</button>
+      <span class="copied" id="copiedMsg" hidden>Copied</span>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">Based on the Teamwork Questionnaire (Leader, Doer, Thinker, Carer).</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------- Instrument content ----------
+  var ITEMS = [
+    "I go out of my way to encourage people in the group.",
+    "I am inclined to get impatient with people who ‘beat about the bush’.",
+    "I urge the group to stick to plans and schedules and meet deadlines.",
+    "When there are different opinions within the group, I encourage people to talk their differences through to a consensus.",
+    "I can be counted on to contribute original ideas.",
+    "I use humour to ease tensions and maintain good relationships.",
+    "I seek common understanding prior to making decisions.",
+    "I listen carefully to what others have to say.",
+    "I avoid getting involved with conflicts.",
+    "I can quickly see what is wrong with unsound ideas put forward by others.",
+    "I openly communicate the whys and wherefores of a situation.",
+    "I am always ready to back a good suggestion in the common interest.",
+    "I tend to put forward lots of ideas.",
+    "I draw people out whenever I sense they have something to contribute.",
+    "When things aren’t progressing well I push ahead and get the job done.",
+    "I develop other people’s ideas so that they are improved.",
+    "I tend to change my mind after listening to other people’s points of view.",
+    "I tend to seek approval and support from others.",
+    "I don’t mind being unpopular if it gets the job done.",
+    "I actively seek ideas and opinions from other people.",
+    "I am a friendly person and find it easy to establish a good rapport with others.",
+    "I am careful not to jump to conclusions too quickly.",
+    "I am good at noticing when someone in the group is feeling aggrieved and upset.",
+    "I enjoy analysing situations and weighing up alternatives.",
+    "I can work well with a very wide range of people.",
+    "I have a reputation for having a no-nonsense ‘call a spade a spade’ style.",
+    "I like to feel I’m fostering good working relationships.",
+    "I tend to be forceful and dynamic.",
+    "I like to anticipate probable difficulties and be prepared for them.",
+    "I press for action to make sure people don’t waste time or go round in circles.",
+    "I can usually get people to agree on a course of action.",
+    "When people have second thoughts, I urge them to press on with the task in hand.",
+    "I like to ponder alternatives before making up my mind.",
+    "I tend to be open about how I am feeling.",
+    "People sometimes think I’m being too analytical and cautious.",
+    "In discussions I like to get straight to the point.",
+    "While I’m interested in all views I do not hesitate to make up my mind when a decision has to be taken.",
+    "Flippant people who don’t take things seriously enough irritate me.",
+    "I am able to influence people without pressurising them.",
+    "I like to think things through before doing something."
+  ];
+
+  // Scoring key (item numbers are 1-based, as on the paper form)
+  var ROLES = [
+    { key: "leader",  name: "Leader",  items: [1, 4, 7, 8, 11, 14, 20, 31, 37, 39],
+      desc: "Making sure that objectives are clear and agreed and that everyone is involved and committed." },
+    { key: "doer",    name: "Doer",    items: [2, 3, 15, 19, 26, 28, 30, 32, 36, 38],
+      desc: "Urging the team to get on with the task in hand." },
+    { key: "thinker", name: "Thinker", items: [5, 10, 13, 16, 22, 24, 29, 33, 35, 40],
+      desc: "Producing carefully considered ideas and weighing up and improving ideas from other people." },
+    { key: "carer",   name: "Carer",   items: [6, 9, 12, 17, 18, 21, 23, 25, 27, 34],
+      desc: "Easing tensions and maintaining harmonious working relationships." }
+  ];
+
+  var OPTIONS = [
+    { label: "Often", value: 2 },
+    { label: "Sometimes", value: 1 },
+    { label: "Rarely", value: 0 }
+  ];
+
+  var MAX = 20;
+  var LOW_CUTOFF = 9;             // "Low scores, say of 9 or below"
+  var FLEX_MIN = 13, FLEX_MAX = 17; // "scores all around the 15 mark"
+
+  // ---------- Build the form ----------
+  var list = document.getElementById("items");
+  ITEMS.forEach(function (text, i) {
+    var n = i + 1;
+    var li = document.createElement("li");
+    li.className = "item";
+    li.id = "item-" + n;
+
+    var num = document.createElement("span");
+    num.className = "num";
+    num.textContent = n;
+    num.setAttribute("aria-hidden", "true");
+
+    var p = document.createElement("p");
+    p.className = "stmt";
+    p.id = "stmt-" + n;
+    p.textContent = text;
+
+    var fs = document.createElement("fieldset");
+    fs.className = "scale";
+    fs.setAttribute("aria-labelledby", "stmt-" + n);
+
+    OPTIONS.forEach(function (opt) {
+      var label = document.createElement("label");
+      var input = document.createElement("input");
+      input.type = "radio";
+      input.name = "q" + n;
+      input.value = opt.value;
+      var span = document.createElement("span");
+      span.textContent = opt.label;
+      label.appendChild(input);
+      label.appendChild(span);
+      fs.appendChild(label);
+    });
+
+    var note = document.createElement("p");
+    note.className = "missing-note";
+    note.textContent = "Choose an answer for this statement.";
+
+    li.appendChild(num);
+    li.appendChild(p);
+    li.appendChild(fs);
+    li.appendChild(note);
+    list.appendChild(li);
+  });
+
+  var form = document.getElementById("quiz");
+  var progressText = document.getElementById("progressText");
+  var meterFill = document.getElementById("meterFill");
+  var resultsEl = document.getElementById("results");
+  var scored = false;
+
+  function getAnswer(n) {
+    var checked = form.querySelector('input[name="q' + n + '"]:checked');
+    return checked ? Number(checked.value) : null;
+  }
+
+  function countAnswered() {
+    var c = 0;
+    for (var n = 1; n <= ITEMS.length; n++) if (getAnswer(n) !== null) c++;
+    return c;
+  }
+
+  function updateProgress() {
+    var c = countAnswered();
+    progressText.textContent = c + " of " + ITEMS.length + " answered";
+    progressText.classList.remove("alert");
+    meterFill.style.width = (c / ITEMS.length * 100) + "%";
+  }
+
+  form.addEventListener("change", function (e) {
+    var item = e.target.closest(".item");
+    if (item) item.classList.remove("missing");
+    updateProgress();
+    // Keep results in sync if a student revises an answer after scoring
+    if (scored && countAnswered() === ITEMS.length) renderResults(false);
+  });
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var missing = [];
+    for (var n = 1; n <= ITEMS.length; n++) {
+      var li = document.getElementById("item-" + n);
+      if (getAnswer(n) === null) { missing.push(n); li.classList.add("missing"); }
+      else li.classList.remove("missing");
+    }
+    if (missing.length) {
+      progressText.textContent = missing.length === 1
+        ? "1 statement still needs an answer (item " + missing[0] + ")"
+        : missing.length + " statements still need an answer";
+      progressText.classList.add("alert");
+      var first = document.getElementById("item-" + missing[0]);
+      first.scrollIntoView({ block: "center" });
+      first.querySelector("input").focus({ preventScroll: true });
+      return;
+    }
+    renderResults(true);
+  });
+
+  // ---------- Scoring ----------
+  function score() {
+    return ROLES.map(function (role) {
+      var often = 0, sometimes = 0;
+      role.items.forEach(function (n) {
+        var a = getAnswer(n);
+        if (a === 2) often++;
+        else if (a === 1) sometimes++;
+      });
+      return { role: role, often: often, sometimes: sometimes, total: often * 2 + sometimes };
+    });
+  }
+
+  function joinNames(arr) {
+    var names = arr.map(function (r) { return r.role.name; });
+    if (names.length <= 1) return names.join("");
+    if (names.length === 2) return names[0] + " and " + names[1];
+    return names.slice(0, -1).join(", ") + ", and " + names[names.length - 1];
+  }
+  function strongNames(arr) {
+    var names = arr.map(function (r) { return "<strong>" + r.role.name + "</strong>"; });
+    if (names.length <= 1) return names.join("");
+    if (names.length === 2) return names[0] + " and " + names[1];
+    return names.slice(0, -1).join(", ") + ", and " + names[names.length - 1];
+  }
+
+  function interpret(results) {
+    var sorted = results.slice().sort(function (a, b) { return b.total - a.total; });
+    var top = sorted[0].total;
+    var primary = sorted.filter(function (r) { return r.total === top; });
+    var rest = sorted.filter(function (r) { return r.total < top; });
+    var second = rest.length ? rest[0].total : null;
+    var backup = rest.filter(function (r) { return r.total === second && r.total > LOW_CUTOFF; });
+    var low = results.filter(function (r) { return r.total <= LOW_CUTOFF; });
+    var flexible = results.every(function (r) { return r.total >= FLEX_MIN && r.total <= FLEX_MAX; });
+    return { primary: primary, backup: backup, low: low, flexible: flexible };
+  }
+
+  function summaryHTML(info) {
+    var parts = [];
+    if (info.primary.length === ROLES.length) {
+      parts.push("Your scores are the same for all four roles, so no single role stands out as your best fit.");
+    } else if (info.primary.length === 1) {
+      parts.push("The role you are best suited to is " + strongNames(info.primary) + ".");
+    } else {
+      parts.push("You are equally suited to the " + strongNames(info.primary) + " roles.");
+    }
+    if (info.backup.length) {
+      parts.push("Your back-up " + (info.backup.length === 1 ? "role is " : "roles are ") + strongNames(info.backup) + ".");
+    }
+    if (info.flexible) {
+      parts.push("All of your scores sit around the 15 mark, which suggests you are flexible enough to adopt any of the four roles.");
+    }
+    if (info.low.length) {
+      parts.push("A score of 9 or below suggests you are less comfortable in the " + strongNames(info.low) +
+        (info.low.length === 1 ? " role." : " roles."));
+    }
+    return parts.map(function (t) { return "<p>" + t + "</p>"; }).join("");
+  }
+
+  function renderResults(scrollTo) {
+    var results = score();
+    var info = interpret(results);
+
+    var name = document.getElementById("respondent").value.trim();
+    document.getElementById("who").textContent = name ? name : "";
+    document.getElementById("who").hidden = !name;
+    document.getElementById("summary").innerHTML = summaryHTML(info);
+
+    // Bars
+    var bars = document.getElementById("bars");
+    bars.innerHTML = "";
+    results.forEach(function (r) {
+      var tag = "";
+      if (info.primary.indexOf(r) > -1 && info.primary.length < ROLES.length) tag = "Best fit";
+      else if (info.backup.indexOf(r) > -1) tag = "Back-up";
+
+      var row = document.createElement("div");
+      row.className = "bar-row";
+      row.innerHTML =
+        '<div class="bar-name">' + r.role.name + '</div>' +
+        '<div class="bar-track" role="img" aria-label="' + r.role.name + ': ' + r.total + ' out of ' + MAX + '">' +
+          '<div class="bar-fill" style="background:var(--' + r.role.key + ')"></div>' +
+          (tag ? '<span class="bar-tag">' + tag + '</span>' : '') +
+        '</div>' +
+        '<div class="bar-score">' + r.total + ' <small>/ ' + MAX + '</small></div>';
+      bars.appendChild(row);
+      var fill = row.querySelector(".bar-fill");
+      var pct = (r.total / MAX * 100) + "%";
+      requestAnimationFrame(function () { requestAnimationFrame(function () { fill.style.width = pct; }); });
+    });
+
+    // Role definitions
+    var defs = document.getElementById("roleDefs");
+    defs.innerHTML = "";
+    results.forEach(function (r) {
+      var li = document.createElement("li");
+      li.style.setProperty("--c", "var(--" + r.role.key + ")");
+      li.innerHTML = "<strong>" + r.role.name + "</strong><p>" + r.role.desc + "</p>";
+      defs.appendChild(li);
+    });
+
+    // Breakdown table
+    var tbody = document.getElementById("breakdown");
+    tbody.innerHTML = "";
+    results.forEach(function (r) {
+      var tr = document.createElement("tr");
+      tr.innerHTML =
+        "<td><strong>" + r.role.name + "</strong></td>" +
+        "<td>" + r.often + " × 2 = " + (r.often * 2) + "</td>" +
+        "<td>" + r.sometimes + "</td>" +
+        "<td><strong>" + r.total + "</strong></td>" +
+        '<td class="items-col">' + r.role.items.join(", ") + "</td>";
+      tbody.appendChild(tr);
+    });
+
+    resultsEl.hidden = false;
+    scored = true;
+    document.body.classList.add("scored");
+    updateProgress();
+
+    if (scrollTo) {
+      resultsEl.scrollIntoView({ block: "start" });
+      resultsEl.focus({ preventScroll: true });
+    }
+    resultsEl._latest = { results: results, info: info, name: name };
+  }
+
+  // ---------- Actions ----------
+  document.getElementById("printBtn").addEventListener("click", function () { window.print(); });
+
+  document.getElementById("copyBtn").addEventListener("click", function () {
+    var d = resultsEl._latest;
+    if (!d) return;
+    var lines = ["Teamwork Questionnaire results" + (d.name ? " – " + d.name : "")];
+    d.results.forEach(function (r) { lines.push(r.role.name + ": " + r.total + " / " + MAX); });
+    lines.push("Best-suited role: " + joinNames(d.info.primary));
+    if (d.info.backup.length) lines.push("Back-up role: " + joinNames(d.info.backup));
+    if (d.info.low.length) lines.push("Less comfortable (9 or below): " + joinNames(d.info.low));
+    if (d.info.flexible) lines.push("Flexible: all scores around 15");
+    var text = lines.join("\n");
+
+    var msg = document.getElementById("copiedMsg");
+    function done() { msg.hidden = false; setTimeout(function () { msg.hidden = true; }, 2000); }
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text).then(done, fallback);
+    } else { fallback(); }
+    function fallback() {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); done(); } catch (err) { window.prompt("Copy your results:", text); }
+      document.body.removeChild(ta);
+    }
+  });
+
+  document.getElementById("resetBtn").addEventListener("click", function () {
+    if (!window.confirm("Clear all your answers and start over?")) return;
+    form.reset();
+    document.getElementById("respondent").value = "";
+    document.querySelectorAll(".item.missing").forEach(function (li) { li.classList.remove("missing"); });
+    resultsEl.hidden = true;
+    scored = false;
+    document.body.classList.remove("scored");
+    updateProgress();
+    window.scrollTo(0, 0);
+  });
+
+  updateProgress();
+})();
+</script>
+</body>
+</html>
