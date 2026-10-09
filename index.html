@@ -86,14 +86,6 @@
   .instructions p { margin: 0 0 0.5rem; }
   .instructions p:last-child { margin-bottom: 0; }
 
-  .name-field { margin-bottom: 2rem; }
-  .name-field label { display: block; font-weight: 700; margin-bottom: 0.35rem; }
-  .name-field .hint { color: var(--muted); font-weight: 400; font-size: 0.95rem; }
-  .name-field input {
-    font: inherit; color: inherit; background: var(--surface);
-    border: 1px solid var(--rule); border-radius: 6px;
-    padding: 0.55rem 0.75rem; width: 100%; max-width: 22rem;
-  }
 
   /* Items */
   .items { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
@@ -169,11 +161,27 @@
   /* Results */
   .results { padding: 3rem 0 4rem; }
   .results[hidden] { display: none; }
-  .results h2 { font-size: clamp(1.75rem, 4.5vw, 2.4rem); line-height: 1.1; letter-spacing: -0.015em; margin: 0 0 0.25rem; }
-  .results .who { color: var(--muted); margin: 0 0 1.5rem; }
+  .results h2 { font-size: clamp(1.75rem, 4.5vw, 2.4rem); line-height: 1.1; letter-spacing: -0.015em; margin: 0 0 1.5rem; }
   .summary { font-size: 1.15rem; max-width: 40rem; }
   .summary p { margin: 0 0 0.75rem; }
   .summary strong { font-weight: 700; }
+
+  .summary .tb-change { font: inherit; font-weight: 400; padding: 0; border: 0; background: none; color: var(--leader); text-decoration: underline; cursor: pointer; }
+
+  .tiebreak {
+    margin: 1.5rem 0 0; padding: 1.25rem; max-width: 42rem;
+    background: var(--surface); border: 1px solid var(--rule); border-radius: 8px;
+    box-shadow: inset 4px 0 0 var(--accent);
+  }
+  .tiebreak[hidden] { display: none; }
+  .tb-q { font-weight: 700; margin: 0 0 0.85rem; }
+  .tb-options { display: grid; gap: 0.6rem; }
+  .tb-options button {
+    text-align: left; font-weight: 400; line-height: 1.45;
+    background: var(--paper); color: var(--ink); border: 1px solid var(--rule);
+    padding: 0.8rem 1rem;
+  }
+  .tb-options button:hover { border-color: var(--accent); }
 
   .bars { margin: 2rem 0 0.5rem; display: grid; gap: 1.1rem; }
   .bar-row { display: grid; grid-template-columns: 6rem 1fr 4.5rem; align-items: center; gap: 1rem; }
@@ -207,6 +215,7 @@
   }
 
   .role-defs { margin: 2.5rem 0 0; padding: 0; list-style: none; display: grid; gap: 0.9rem; max-width: 42rem; }
+  .role-defs[hidden] { display: none; }
   .role-defs li { padding-left: 1rem; border-left: 4px solid var(--c); }
   .role-defs strong { display: block; }
   .role-defs p { margin: 0; color: var(--muted); }
@@ -228,7 +237,7 @@
   /* Print: results only */
   @media print {
     body { background: #fff; color: #000; }
-    body.scored .instructions, body.scored .name-field, body.scored #quiz,
+    body.scored .instructions, body.scored #quiz,
     body.scored .lede, .actions, footer { display: none !important; }
     .results { padding-top: 1rem; }
     .bar-fill, .role-strip span { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -257,10 +266,6 @@
       <p>Read each of the 40 statements and decide, as honestly as you can, whether you <strong>often</strong>, <strong>sometimes</strong>, or <strong>rarely</strong> behave in the way described. There are no right or wrong answers.</p>
     </div>
 
-    <div class="name-field">
-      <label for="respondent">Your name <span class="hint">(optional, shown on printed results)</span></label>
-      <input id="respondent" type="text" autocomplete="name">
-    </div>
   </div>
 
   <form id="quiz" novalidate>
@@ -280,8 +285,12 @@
 
   <section class="wrap results" id="results" hidden tabindex="-1" aria-labelledby="resultsHeading">
     <h2 id="resultsHeading">Your teamwork profile</h2>
-    <p class="who" id="who"></p>
     <div class="summary" id="summary"></div>
+
+    <div class="tiebreak" id="tiebreak" hidden>
+      <p class="tb-q" id="tbQuestion">Which of these sounds more like you when you work in a team?</p>
+      <div class="tb-options" id="tbOptions" role="group" aria-labelledby="tbQuestion"></div>
+    </div>
 
     <div class="bars" id="bars"></div>
     <div class="scale-key" aria-hidden="true">
@@ -303,6 +312,7 @@
         </table>
       </div>
       <p class="method">Each “often” answer counts 2 points, each “sometimes” counts 1, and each “rarely” counts 0. Each role has 10 items, so the maximum score is 20. Scores of 9 or below (the shaded part of each bar) suggest you are less comfortable in that role.</p>
+      <p class="method">Breaking ties: when two or more roles share the highest score, the role with more “often” answers is treated as your stronger tendency, because “often” is the strongest level of agreement. If the roles are still tied after that, you choose which role description sounds more like you.</p>
     </details>
 
     <div class="actions">
@@ -437,6 +447,7 @@
   var meterFill = document.getElementById("meterFill");
   var resultsEl = document.getElementById("results");
   var scored = false;
+  var tieChoice = null; // role key picked in the forced-choice tie-break
 
   function getAnswer(n) {
     var checked = form.querySelector('input[name="q' + n + '"]:checked');
@@ -511,27 +522,71 @@
     return names.slice(0, -1).join(", ") + ", and " + names[names.length - 1];
   }
 
+  // Tie-break rule:
+  //   1. Highest total score wins.
+  //   2. If tied, the role with more "often" answers wins (strongest endorsement).
+  //   3. If still tied, the student picks between the tied role descriptions.
+  // Roles that lose the tie become the back-up role(s).
   function interpret(results) {
     var sorted = results.slice().sort(function (a, b) { return b.total - a.total; });
     var top = sorted[0].total;
-    var primary = sorted.filter(function (r) { return r.total === top; });
-    var rest = sorted.filter(function (r) { return r.total < top; });
-    var second = rest.length ? rest[0].total : null;
-    var backup = rest.filter(function (r) { return r.total === second && r.total > LOW_CUTOFF; });
+    var tied = sorted.filter(function (r) { return r.total === top; });
+    var winner = null, tie = null, backup = [];
+
+    if (tied.length === 1) {
+      winner = tied[0];
+      var rest = sorted.slice(1);
+      var second = rest.length ? rest[0].total : null;
+      backup = rest.filter(function (r) { return r.total === second && r.total > LOW_CUTOFF; });
+    } else {
+      var maxOften = Math.max.apply(null, tied.map(function (r) { return r.often; }));
+      var finalists = tied.filter(function (r) { return r.often === maxOften; });
+      if (finalists.length === 1) {
+        winner = finalists[0];
+        tie = { method: "often", roles: tied, finalists: finalists };
+      } else {
+        var picked = finalists.filter(function (r) { return r.role.key === tieChoice; });
+        winner = picked.length ? picked[0] : null;
+        tie = { method: "choice", roles: tied, finalists: finalists };
+      }
+      if (winner) backup = tied.filter(function (r) { return r !== winner && r.total > LOW_CUTOFF; });
+    }
+
     var low = results.filter(function (r) { return r.total <= LOW_CUTOFF; });
     var flexible = results.every(function (r) { return r.total >= FLEX_MIN && r.total <= FLEX_MAX; });
-    return { primary: primary, backup: backup, low: low, flexible: flexible };
+    return { winner: winner, tie: tie, backup: backup, low: low, flexible: flexible };
+  }
+
+  function oftenCounts(arr) {
+    return arr.map(function (r) {
+      return r.role.name + " (" + r.often + " " + (r.often === 1 ? "item" : "items") + ")";
+    }).join(arr.length === 2 ? " and " : ", ");
   }
 
   function summaryHTML(info) {
     var parts = [];
-    if (info.primary.length === ROLES.length) {
-      parts.push("Your scores are the same for all four roles, so no single role stands out as your best fit.");
-    } else if (info.primary.length === 1) {
-      parts.push("The role you are best suited to is " + strongNames(info.primary) + ".");
+    var tie = info.tie;
+
+    if (!tie) {
+      parts.push("The role you are best suited to is " + strongNames([info.winner]) + ".");
     } else {
-      parts.push("You are equally suited to the " + strongNames(info.primary) + " roles.");
+      var tiedAt = (tie.roles.length === ROLES.length ? "All four of your role scores" : "Your " + joinNames(tie.roles) + " scores") +
+        " are tied at " + tie.roles[0].total + ".";
+      if (tie.method === "often") {
+        parts.push(tiedAt + " To break the tie, we looked at which role you marked “often” most: " +
+          oftenCounts(tie.roles) + ". That makes " + strongNames([info.winner]) + " the role you tend towards most.");
+      } else if (!info.winner) {
+        var sameOften = tie.finalists.length === tie.roles.length
+          ? "You also marked “often” the same number of times for each."
+          : "You marked “often” most for " + joinNames(tie.finalists) + ", the same number of times for each.";
+        parts.push(tiedAt + " " + sameOften + " Answer the question below to see which role you tend towards most.");
+      } else {
+        parts.push(tiedAt + " Because you also marked “often” equally for " + joinNames(tie.finalists) +
+          ", you chose the description that sounds most like you: " + strongNames([info.winner]) +
+          " is the role you tend towards most. <button type=\"button\" class=\"tb-change\" id=\"tbChange\">Change my choice</button>");
+      }
     }
+
     if (info.backup.length) {
       parts.push("Your back-up " + (info.backup.length === 1 ? "role is " : "roles are ") + strongNames(info.backup) + ".");
     }
@@ -545,22 +600,52 @@
     return parts.map(function (t) { return "<p>" + t + "</p>"; }).join("");
   }
 
+  function renderTiebreak(info) {
+    var panel = document.getElementById("tiebreak");
+    var opts = document.getElementById("tbOptions");
+    var needed = info.tie && info.tie.method === "choice" && !info.winner;
+    panel.hidden = !needed;
+    // Keep role labels out of view until the choice is made
+    document.getElementById("roleDefs").hidden = needed;
+    opts.innerHTML = "";
+    if (!needed) return;
+    // Show descriptions only, in random order, so role labels don't sway the choice
+    var finalists = info.tie.finalists.slice().sort(function () { return Math.random() - 0.5; });
+    finalists.forEach(function (r) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.textContent = r.role.desc;
+      b.addEventListener("click", function () {
+        tieChoice = r.role.key;
+        renderResults(false);
+        document.getElementById("summary").scrollIntoView({ block: "nearest" });
+      });
+      opts.appendChild(b);
+    });
+  }
+
   function renderResults(scrollTo) {
     var results = score();
     var info = interpret(results);
 
-    var name = document.getElementById("respondent").value.trim();
-    document.getElementById("who").textContent = name ? name : "";
-    document.getElementById("who").hidden = !name;
     document.getElementById("summary").innerHTML = summaryHTML(info);
+    renderTiebreak(info);
+    var changeBtn = document.getElementById("tbChange");
+    if (changeBtn) changeBtn.addEventListener("click", function () {
+      tieChoice = null;
+      renderResults(false);
+      var first = document.querySelector("#tbOptions button");
+      if (first) first.focus();
+    });
 
     // Bars
     var bars = document.getElementById("bars");
     bars.innerHTML = "";
     results.forEach(function (r) {
       var tag = "";
-      if (info.primary.indexOf(r) > -1 && info.primary.length < ROLES.length) tag = "Best fit";
+      if (r === info.winner) tag = "Best fit";
       else if (info.backup.indexOf(r) > -1) tag = "Back-up";
+      else if (!info.winner && info.tie && info.tie.finalists.indexOf(r) > -1) tag = "Tied";
 
       var row = document.createElement("div");
       row.className = "bar-row";
@@ -610,7 +695,7 @@
       resultsEl.scrollIntoView({ block: "start" });
       resultsEl.focus({ preventScroll: true });
     }
-    resultsEl._latest = { results: results, info: info, name: name };
+    resultsEl._latest = { results: results, info: info };
   }
 
   // ---------- Actions ----------
@@ -619,9 +704,14 @@
   document.getElementById("copyBtn").addEventListener("click", function () {
     var d = resultsEl._latest;
     if (!d) return;
-    var lines = ["Teamwork Questionnaire results" + (d.name ? " – " + d.name : "")];
+    var lines = ["Teamwork Questionnaire results"];
     d.results.forEach(function (r) { lines.push(r.role.name + ": " + r.total + " / " + MAX); });
-    lines.push("Best-suited role: " + joinNames(d.info.primary));
+    var t = d.info.tie;
+    if (!d.info.winner) lines.push("Best-suited role: tied between " + joinNames(t.finalists) + " (tie-break question not answered)");
+    else if (!t) lines.push("Best-suited role: " + d.info.winner.role.name);
+    else lines.push("Best-suited role: " + d.info.winner.role.name + " (tied with " +
+      joinNames(t.roles.filter(function (r) { return r !== d.info.winner; })) +
+      (t.method === "often" ? "; broken by number of “often” answers)" : "; broken by student’s choice)"));
     if (d.info.backup.length) lines.push("Back-up role: " + joinNames(d.info.backup));
     if (d.info.low.length) lines.push("Less comfortable (9 or below): " + joinNames(d.info.low));
     if (d.info.flexible) lines.push("Flexible: all scores around 15");
@@ -646,7 +736,7 @@
   document.getElementById("resetBtn").addEventListener("click", function () {
     if (!window.confirm("Clear all your answers and start over?")) return;
     form.reset();
-    document.getElementById("respondent").value = "";
+    tieChoice = null;
     document.querySelectorAll(".item.missing").forEach(function (li) { li.classList.remove("missing"); });
     resultsEl.hidden = true;
     scored = false;
